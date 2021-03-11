@@ -168,6 +168,12 @@ func (c *Client) GitWithOutput(ctx context.Context, subcommand string, args ...s
 		env = append(env, fmt.Sprintf("GIT_AUTH_PASSWORD=%s", pwd))
 	}
 
+	if stat, err := os.Stat("/etc/ssl/certs/ca-cert-gitpod.crt"); err == nil && stat.Size() > 0 {
+		// We need to tell Git where to find CA certs in case someone added custom CA certs.
+		// env = append(env, "GIT_SSL_CAPATH=/etc/ssl/certs")
+		fullArgs = append(fullArgs, "-c", "http.sslCAPath=/etc/ssl/certs")
+	}
+
 	fullArgs = append(fullArgs, subcommand)
 	fullArgs = append(fullArgs, args...)
 

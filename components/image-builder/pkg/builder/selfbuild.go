@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	selfbuildDockerfileApkAdd = "RUN apk add --no-cache git bash openssh-client lz4 coreutils"
+	selfbuildDockerfileApkAdd = "RUN apk add --no-cache git bash openssh-client lz4 coreutils openssl"
 	selfbuildDockerfileBottom = `
 # Add gitpod user for operations (e.g. checkout because of the post-checkout hook!)
 RUN addgroup -g 33333 gitpod \
@@ -31,6 +31,9 @@ RUN addgroup -g 33333 gitpod \
 
 COPY bob /bob
 COPY gitpodLayer.tar.gz /gitpodLayer.tar.gz
+COPY ca-cert-gitpod.crt /etc/ssl/certs/ca-cert-gitpod.crt
+RUN cd /etc/ssl/certs && [ -s ca-cert-gitpod.crt ] && \
+	ln -s ca-cert-gitpod.crt $(openssl x509 -hash -noout -in ca-cert-gitpod.crt).0
 RUN mkdir /gitpod-layer && cd /gitpod-layer && tar xzfv /gitpodLayer.tar.gz
 `
 )
@@ -190,6 +193,41 @@ func writeSelfBuildContext(o io.WriteCloser, gitpodLayerLoc, baseImage, alpineIm
 	_, err = io.Copy(arc, gplayerIn)
 	if err != nil {
 		return xerrors.Errorf("cannot write selfbuild context: %w", err)
+	}
+
+	// add CA cert
+	if _, err := os.Stat("/etc/ssl/certs/ca-cert-gitpod.crt"); err == nil {
+		caCertsIn, err := os.OpenFile("/etc/ssl/certs/ca-cert-gitpod.crt", os.O_RDONLY, 0600)
+		if err != nil {
+			return xerrors.Errorf("cannot write selfbuild context: %w", err)
+		}
+		defer caCertsIn.Close()
+		stat, err = caCertsIn.Stat()
+		if err != nil {
+			return xerrors.Errorf("cannot write selfbuild context: %w", err)
+		}
+		err = arc.WriteHeader(&tar.Header{
+			Name:    "ca-cert-gitpod.crt",
+			Size:    stat.Size(),
+			ModTime: stat.ModTime(),
+			Mode:    0755,
+		})
+		if err != nil {
+			return xerrors.Errorf("cannot write selfbuild context: %w", err)
+		}
+		_, err = io.Copy(arc, caCertsIn)
+		if err != nil {
+			return xerrors.Errorf("cannot write selfbuild context: %w", err)
+		}
+	} else {
+		err = arc.WriteHeader(&tar.Header{
+			Name: "ca-cert-gitpod.crt",
+			Size: 0,
+			Mode: 0755,
+		})
+		if err != nil {
+			return xerrors.Errorf("cannot write selfbuild context: %w", err)
+		}
 	}
 
 	dockerfile := selfbuildDockerfile(baseImage, alpineImage)

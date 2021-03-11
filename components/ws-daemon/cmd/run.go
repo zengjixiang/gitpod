@@ -5,10 +5,15 @@
 package cmd
 
 import (
+	"bytes"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -33,6 +38,7 @@ var runCmd = &cobra.Command{
 	Short: "Connects to the messagebus and starts the workspace monitor",
 
 	Run: func(cmd *cobra.Command, args []string) {
+		createCAFingerprintSymlink()
 		cfg := getConfig()
 		reg := prometheus.NewRegistry()
 		dmn, err := daemon.NewDaemon(cfg.Daemon, prometheus.WrapRegistererWithPrefix("gitpod_ws_daemon_", reg))
@@ -125,4 +131,25 @@ var runCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(runCmd)
+}
+
+func createCAFingerprintSymlink() {
+	caDir := "/etc/ssl/certs/"
+	caFile := filepath.Join(caDir, "ca-cert-gitpod.crt")
+	if stat, err := os.Stat(caFile); err == nil && stat.Size() > 0 {
+		cmd := exec.Command("openssl", "x509", "-hash", "-noout", "-in", caFile)
+		var hash, stderr bytes.Buffer
+		cmd.Stdout = &hash
+		cmd.Stderr = &stderr
+		err := cmd.Run()
+		if err != nil {
+			log.WithError(err).Errorf("cannot generate hash of ca-cert-gitpod.crt: %s", string(stderr.Bytes()))
+		}
+		symlinkFile := filepath.Join(caDir, fmt.Sprintf("%s.0", strings.TrimSpace(string(hash.Bytes()))))
+		err = os.Symlink(caFile, symlinkFile)
+		if err != nil {
+			log.WithError(err).Error("cannot create symlink to ca-cert-gitpod.crt")
+		}
+		log.Debugf("symlink '%s' created", symlinkFile)
+	}
 }
