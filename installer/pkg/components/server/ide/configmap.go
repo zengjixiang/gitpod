@@ -75,6 +75,16 @@ func configmap(ctx *common.RenderContext) ([]runtime.Object, error) {
 					Image:              common.ImageName(ctx.Config.Repository, ide.CodeIDEImage, ctx.VersionManifest.Components.Workspace.CodeImage.Version),
 					ResolveImageDigest: pointer.Bool(true),
 				},
+				"xterm-demo": {
+					OrderKey:           pointer.String("08"),
+					Title:              "VS Code",
+					Type:               typeBrowser,
+					Logo:               getIdeLogoPath("vscodeInsiders"),
+					Tooltip:            pointer.String("Early access version, still subject to testing."),
+					Label:              pointer.String("Insiders"),
+					Image:              common.ImageName("registry.hub.docker.com", "filiptronicek/xterm-ide", "latest"),
+					ResolveImageDigest: pointer.Bool(true),
+				},
 				codeDesktop: {
 					OrderKey: pointer.String("02"),
 					Title:    "VS Code",
