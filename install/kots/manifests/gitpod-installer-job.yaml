@@ -43,7 +43,7 @@ spec:
       containers:
         - name: installer
           # Normally, this would be a release but this has additions for Replicated from 2022.01
-          image: eu.gcr.io/gitpod-core-dev/build/installer:main.2316
+          image: eu.gcr.io/gitpod-core-dev/build/installer:sje-kots-install.9
           volumeMounts:
             - mountPath: /mnt/node0
               name: node-fs0
@@ -55,6 +55,8 @@ spec:
               value: /run/k3s/containerd/io.containerd.runtime.v2.task/k8s.io
             - name: CONTAINERD_SOCKET_K3S
               value: /run/k3s/containerd/containerd.sock
+            - name: GITPOD_OBJECTS
+              value: /tmp/gitpod
           command:
             - /bin/sh
             - -c
@@ -155,8 +157,30 @@ spec:
                 fi
               fi
 
+              echo "Gitpod: Create a Helm template directory"
+              rm -Rf "${GITPOD_OBJECTS}"
+              mkdir -p "${GITPOD_OBJECTS}/templates"
+              cat <<EOF >> "${GITPOD_OBJECTS}/Chart.yaml"
+              apiVersion: v2
+              name: gitpod
+              description: Always ready-to-code
+              Version: "1.0.0"
+              appVersion: "$(/app/installer version | yq e '.version' -)"
+              EOF
+
               echo "Gitpod: Generate the Kubernetes objects and apply"
-              /app/installer render -c "${CONFIG_FILE}" --namespace {{repl Namespace }} | kubectl apply -f -
+              /app/installer render -c "${CONFIG_FILE}" --namespace {{repl Namespace }} > "${GITPOD_OBJECTS}/templates/gitpod.yaml"
+
+              helm upgrade \
+                --atomic \
+                --cleanup-on-fail \
+                --create-namespace \
+                --install \
+                --namespace="{{repl Namespace }}" \
+                --reset-values \
+                --wait \
+                gitpod \
+                "${GITPOD_OBJECTS}"
 
               echo "Gitpod: Installer job finished - goodbye"
       volumes:
