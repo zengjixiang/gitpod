@@ -9,3 +9,10 @@ spec:
     chartVersion: 1.7.0
   helmVersion: v3
   useHelmInstall: true
+  optionalValues:
+    - when: '{{repl and (ConfigOptionEquals "cert_manager_enabled" "1") (ConfigOptionEquals "cert_manager_provider" "azure") }}'
+      recursiveMerge: true
+      values:
+        cert-manager:
+          extraArgs:
+            - '--issuer-ambient-credentials=true'
