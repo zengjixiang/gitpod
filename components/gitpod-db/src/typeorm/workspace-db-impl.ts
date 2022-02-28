@@ -754,7 +754,7 @@ export abstract class AbstractTypeORMWorkspaceDBImpl implements WorkspaceDB {
         return await queryBuilder.getCount();
     }
 
-    public async findAllWorkspaceAndInstances(offset: number, limit: number, orderBy: keyof WorkspaceAndInstance, orderDir: "ASC" | "DESC", query?: AdminGetWorkspacesQuery, searchTerm?: string): Promise<{ total: number, rows: WorkspaceAndInstance[] }> {
+    public async findAllWorkspaceAndInstances(offset: number, limit: number, orderBy: keyof WorkspaceAndInstance, orderDir: "ASC" | "DESC", query?: AdminGetWorkspacesQuery): Promise<{ total: number, rows: WorkspaceAndInstance[] }> {
         let whereConditions = [];
         let whereConditionParams: any = {};
         let instanceIdQuery: boolean = false;
@@ -780,11 +780,6 @@ export abstract class AbstractTypeORMWorkspaceDBImpl implements WorkspaceDB {
                 whereConditions.push("ws.ownerId = :ownerId");
                 whereConditionParams.ownerId = query.ownerId;
             }
-        }
-
-        if (searchTerm) {
-            // If a search term is provided perform a wildcard search in the context url or exact match on the workspace id (aka workspace name) or the instance id.
-            whereConditions.push(`ws.contextURL LIKE '%${searchTerm}%'`);
         }
 
         let orderField: string = orderBy;
