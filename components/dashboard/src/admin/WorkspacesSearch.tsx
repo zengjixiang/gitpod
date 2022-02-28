@@ -5,9 +5,8 @@
  */
 
 import { AdminGetListResult, AdminGetWorkspacesQuery, ContextURL, User, WorkspaceAndInstance } from "@gitpod/gitpod-protocol";
-import { matchesInstanceIdOrLegacyWorkspaceIdExactly, matchesNewWorkspaceIdExactly } from "@gitpod/gitpod-protocol/lib/util/parse-workspace-id";
 import moment from "moment";
-import { useContext, useEffect, useState } from "react";
+import { SetStateAction, useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router";
 import { Link, Redirect } from "react-router-dom";
 import { PageWithSubMenu } from "../components/PageWithSubMenu";
@@ -33,6 +32,7 @@ export function WorkspaceSearch(props: Props) {
     const [searchResult, setSearchResult] = useState<AdminGetListResult<WorkspaceAndInstance>>({ rows: [], total: 0 });
     const [queryTerm, setQueryTerm] = useState('');
     const [searching, setSearching] = useState(false);
+    const [filter, setFilter] = useState('workspace');
     const [currentWorkspace, setCurrentWorkspaceState] = useState<WorkspaceAndInstance|undefined>(undefined);
 
     useEffect(() => {
@@ -65,16 +65,22 @@ export function WorkspaceSearch(props: Props) {
         return <WorkspaceDetail workspace={currentWorkspace}/>;
     }
 
+    const handleFilterChange = (e: { target: { value: SetStateAction<string> } }) =>{
+        console.log(e.target.value);
+        setFilter(e.target.value);
+     }
+
     const search = async () => {
         setSearching(true);
         try {
             const query: AdminGetWorkspacesQuery = {
                 ownerId: props?.user?.id,
             };
-            if (matchesInstanceIdOrLegacyWorkspaceIdExactly(queryTerm)) {
-                query.instanceIdOrWorkspaceId = queryTerm;
-            } else if (matchesNewWorkspaceIdExactly(queryTerm)) {
+
+            if (filter === "workspace") {
                 query.workspaceId = queryTerm;
+            } else {
+                query.instanceId = queryTerm;
             }
 
             const result = await getGitpodService().server.adminGetWorkspaces({
@@ -98,9 +104,21 @@ export function WorkspaceSearch(props: Props) {
                             <path fillRule="evenodd" clipRule="evenodd" d="M6 2a4 4 0 100 8 4 4 0 000-8zM0 6a6 6 0 1110.89 3.477l4.817 4.816a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 010 6z" fill="#A8A29E" />
                         </svg>
                     </div>
-                    <input type="search" placeholder="Search Workspace IDs" onKeyDown={(ke) => ke.key === 'Enter' && search() } onChange={(v) => { setQueryTerm((v.target.value).trim()) }} />
+                    <input type="search" placeholder="Search" onKeyDown={(ke) => ke.key === 'Enter' && search() } onChange={(v) => { setQueryTerm((v.target.value).trim()) }} />
                 </div>
                 <button disabled={searching} onClick={search}>Search</button>
+            </div>
+        </div>
+        <div className="mb-12">
+            <div>
+                <input type="radio" id="workspace" name="filter" value="workspace" checked={filter === 'workspace'}
+                    style={{ marginRight: 12 }} onChange={handleFilterChange} />
+                <label htmlFor="workspace" className="text-gray-600 dark:text-gray-400">Workspace IDs</label>
+            </div>
+            <div>
+                <input type="radio" id="instance" name="filter" value="instance" checked={filter === 'instance'}
+                    style={{ marginRight: 12 }} onChange={handleFilterChange} />
+                <label htmlFor="instance" className="text-gray-600 dark:text-gray-400">Instance IDs</label>
             </div>
         </div>
         <div className="flex flex-col space-y-2">
