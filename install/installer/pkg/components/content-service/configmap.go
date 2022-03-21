@@ -24,7 +24,7 @@ func configmap(ctx *common.RenderContext) ([]runtime.Object, error) {
 			Addr: fmt.Sprintf(":%d", PrometheusPort),
 		},
 		PProf: config.PProf{
-			Addr: fmt.Sprintf(":%d", PProfPort),
+			Addr:      common.DefaultPprofAddress(),,
 		},
 		Storage: common.StorageConfig(ctx),
 	}

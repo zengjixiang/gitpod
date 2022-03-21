@@ -62,7 +62,7 @@ func configmap(ctx *common.RenderContext) ([]runtime.Object, error) {
 				Location: "/app/public",
 			},
 		},
-		PProfAddr:          ":60060",
+		PProfAddr:          common.DefaultPprofAddress(),
 		PrometheusAddr:     ":60095",
 		ReadinessProbeAddr: ":60088",
 		WorkspaceManager: &config.WorkspaceManagerConn{

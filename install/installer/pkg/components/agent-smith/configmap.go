@@ -22,7 +22,7 @@ import (
 
 func configmap(ctx *common.RenderContext) ([]runtime.Object, error) {
 	ascfg := config.ServiceConfig{
-		PProfAddr:      fmt.Sprintf("localhost:%d", PProfPort),
+		PProfAddr:      common.DefaultPprofAddress(),
 		PrometheusAddr: fmt.Sprintf("localhost:%d", PrometheusPort),
 		HostURL:        fmt.Sprintf("https://%s", ctx.Config.Domain),
 		Config: config.Config{

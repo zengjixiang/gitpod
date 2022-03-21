@@ -87,7 +87,7 @@ func configmap(ctx *common.RenderContext) ([]runtime.Object, error) {
 			},
 		},
 		AuthCfg:        "/mnt/pull-secret.json",
-		PProfAddr:      ":6060",
+		PProfAddr:      common.DefaultPprofAddress(),
 		PrometheusAddr: "127.0.0.1:9500",
 	}
 

@@ -10,5 +10,4 @@ const (
 	RPCServiceName = "rpc"
 	PrometheusPort = 9500
 	PrometheusName = "metrics"
-	PProfPort      = 6060
 )

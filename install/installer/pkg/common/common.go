@@ -549,3 +549,7 @@ func ThirdPartyContainerRepo(configRegistry string, thirdPartyRegistry string) s
 func ToJSONString(input interface{}) ([]byte, error) {
 	return json.MarshalIndent(input, "", "  ")
 }
+
+func DefaultPprofAddress() string {
+	return fmt.Sprintf("127.0.0.1:%v", PProfPort)
+}

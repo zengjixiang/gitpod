@@ -45,6 +45,8 @@ const (
 	WSProxyComponent            = "ws-proxy"
 
 	AnnotationConfigChecksum = "gitpod.io/checksum_config"
+
+	PProfPort = 6060
 )
 
 var (
