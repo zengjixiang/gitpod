@@ -91,7 +91,6 @@ type blobHandler struct {
 }
 
 func (bh *blobHandler) getBlob(w http.ResponseWriter, r *http.Request) {
-	// v2.ErrorCodeBlobUnknown.WithDetail(bh.Digest)
 	//nolint:staticcheck,ineffassign
 	span, ctx := opentracing.StartSpanFromContext(r.Context(), "getBlob")
 
@@ -115,11 +114,12 @@ func (bh *blobHandler) getBlob(w http.ResponseWriter, r *http.Request) {
 
 		var src BlobSource
 		for _, s := range srcs {
-			if !s.HasBlob(ctx, bh.Spec, bh.Digest) {
-				continue
+			if s.HasBlob(ctx, bh.Spec, bh.Digest) {
+				src = s
+				break
 			}
-			src = s
 		}
+
 		if src == nil {
 			return distv2.ErrorCodeBlobUnknown
 		}
@@ -128,9 +128,11 @@ func (bh *blobHandler) getBlob(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return err
 		}
+
 		if rc != nil {
 			defer rc.Close()
 		}
+
 		if url != "" {
 			http.Redirect(w, r, url, http.StatusPermanentRedirect)
 			return nil
@@ -140,10 +142,11 @@ func (bh *blobHandler) getBlob(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Etag", bh.Digest.String())
 		t0 := time.Now()
 		n, err := io.Copy(w, rc)
-		dt := time.Since(t0)
 		if err != nil {
 			return err
 		}
+
+		dt := time.Since(t0)
 		bh.Metrics.BlobDownloadSpeedHist.Observe(float64(n) / dt.Seconds())
 
 		return nil
@@ -169,6 +172,10 @@ func (bh *blobHandler) downloadManifest(ctx context.Context, ref string) (res *o
 		return nil, nil, err
 	}
 	res, _, err = DownloadManifest(ctx, fetcher, desc, WithStore(bh.Store))
+	if err != nil {
+		return nil, nil, err
+	}
+
 	return
 }
 

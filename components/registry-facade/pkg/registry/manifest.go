@@ -102,6 +102,7 @@ func (mh *manifestHandler) getManifest(w http.ResponseWriter, r *http.Request) {
 	logFields := log.OWI("", "", mh.Name)
 	logFields["tag"] = mh.Tag
 	logFields["spec"] = mh.Spec
+
 	err := func() error {
 		log.WithFields(logFields).Debug("get manifest")
 		tracing.LogMessageSafe(span, "spec", mh.Spec)
@@ -238,7 +239,6 @@ func (mh *manifestHandler) getManifest(w http.ResponseWriter, r *http.Request) {
 		log.WithFields(logFields).Debug("get manifest (end)")
 		return nil
 	}()
-
 	if err != nil {
 		log.WithError(err).WithField("spec", mh.Spec).Error("cannot get manifest")
 		respondWithError(w, err)
@@ -314,8 +314,9 @@ func DownloadManifest(ctx context.Context, fetcher remotes.Fetcher, desc ociv1.D
 		}
 	}
 
+	defer rc.Close()
+
 	inpt, err := io.ReadAll(rc)
-	rc.Close()
 	if err != nil {
 		err = xerrors.Errorf("cannot download manifest: %w", err)
 		return
@@ -345,9 +346,11 @@ func DownloadManifest(ctx context.Context, fetcher remotes.Fetcher, desc ociv1.D
 			err = xerrors.Errorf("cannot download config: %w", err)
 			return
 		}
+
+		defer rc.Close()
+
 		rdesc = &md
 		inpt, err = io.ReadAll(rc)
-		rc.Close()
 		if err != nil {
 			err = xerrors.Errorf("cannot download manifest: %w", err)
 			return

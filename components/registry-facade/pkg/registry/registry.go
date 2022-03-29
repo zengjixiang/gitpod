@@ -13,12 +13,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gitpod-io/gitpod/registry-facade/api/config"
-
-	common_grpc "github.com/gitpod-io/gitpod/common-go/grpc"
-	"github.com/gitpod-io/gitpod/common-go/log"
-	"github.com/gitpod-io/gitpod/registry-facade/api"
-
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/content/local"
 	"github.com/containerd/containerd/remotes"
@@ -31,6 +25,11 @@ import (
 	"golang.org/x/xerrors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
+	common_grpc "github.com/gitpod-io/gitpod/common-go/grpc"
+	"github.com/gitpod-io/gitpod/common-go/log"
+	"github.com/gitpod-io/gitpod/registry-facade/api"
+	"github.com/gitpod-io/gitpod/registry-facade/api/config"
 )
 
 // BuildStaticLayer builds a layer set from a static layer configuration
@@ -84,7 +83,6 @@ func NewRegistry(cfg config.Config, newResolver ResolverProvider, reg prometheus
 	if err != nil {
 		return nil, err
 	}
-	// TODO: GC the store
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -164,7 +162,12 @@ func NewRegistry(cfg config.Config, newResolver ResolverProvider, reg prometheus
 			grpcOpts = append(grpcOpts, grpc.WithInsecure())
 		}
 
-		specprov, err := NewCachingSpecProvider(128, NewRemoteSpecProvider(cfg.RemoteSpecProvider.Addr, grpcOpts))
+		remoteProvider, err := NewRemoteSpecProvider(cfg.RemoteSpecProvider.Addr, grpcOpts)
+		if err != nil {
+			return nil, xerrors.Errorf("cannot create remote provider: %w", err)
+		}
+
+		specprov, err := NewCachingSpecProvider(2048, remoteProvider)
 		if err != nil {
 			return nil, xerrors.Errorf("cannot create caching spec provider: %w", err)
 		}

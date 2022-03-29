@@ -228,6 +228,7 @@ func NewStaticSourceFromImage(ctx context.Context, resolver remotes.Resolver, re
 	if err != nil {
 		return nil, err
 	}
+
 	fetcher, err := resolver.Fetcher(ctx, ref)
 	if err != nil {
 		return nil, err

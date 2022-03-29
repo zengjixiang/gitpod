@@ -6,13 +6,11 @@ package registry
 
 import (
 	"context"
-	"sync"
 
 	lru "github.com/hashicorp/golang-lru"
 	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/xerrors"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 
 	"github.com/gitpod-io/gitpod/registry-facade/api"
 )
@@ -29,26 +27,24 @@ type ImageSpecProvider interface {
 
 // RemoteSpecProvider queries a remote spec provider using gRPC
 type RemoteSpecProvider struct {
-	addr string
-	opts []grpc.DialOption
 	conn *grpc.ClientConn
-	mu   sync.RWMutex
 }
 
 // NewRemoteSpecProvider produces a new remote spec provider
-func NewRemoteSpecProvider(addr string, opts []grpc.DialOption) *RemoteSpecProvider {
-	return &RemoteSpecProvider{
-		addr: addr,
-		opts: opts,
+func NewRemoteSpecProvider(addr string, opts []grpc.DialOption) (*RemoteSpecProvider, error) {
+	conn, err := grpc.DialContext(context.Background(), addr, opts...)
+	if err != nil {
+		return nil, err
 	}
+
+	return &RemoteSpecProvider{
+		conn: conn,
+	}, nil
 }
 
 // GetSpec returns the spec for the image or a wrapped ErrRefInvalid
 func (p *RemoteSpecProvider) GetSpec(ctx context.Context, ref string) (*api.ImageSpec, error) {
-	client, err := p.getClient(ctx)
-	if err != nil {
-		return nil, xerrors.Errorf("%w: %s", ErrRefInvalid, err.Error())
-	}
+	client := api.NewSpecProviderClient(p.conn)
 
 	resp, err := client.GetImageSpec(ctx, &api.GetImageSpecRequest{Id: ref})
 	if err != nil {
@@ -57,37 +53,13 @@ func (p *RemoteSpecProvider) GetSpec(ctx context.Context, ref string) (*api.Imag
 	return resp.Spec, nil
 }
 
-func (p *RemoteSpecProvider) getClient(ctx context.Context) (client api.SpecProviderClient, err error) {
-	isValidConn := func() bool {
-		return p.conn != nil && p.conn.GetState() != connectivity.TransientFailure
-	}
-
-	p.mu.RLock()
-	if isValidConn() {
-		defer p.mu.RUnlock()
-		return api.NewSpecProviderClient(p.conn), nil
-	}
-	p.mu.RUnlock()
-
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if isValidConn() {
-		return api.NewSpecProviderClient(p.conn), nil
-	}
-
-	p.conn, err = grpc.DialContext(ctx, p.addr, p.opts...)
-	if err != nil {
-		return nil, err
-	}
-	return api.NewSpecProviderClient(p.conn), nil
-}
-
 // NewCachingSpecProvider creates a new LRU caching spec provider with a max number of specs it can cache.
 func NewCachingSpecProvider(space int, delegate ImageSpecProvider) (*CachingSpecProvider, error) {
 	cache, err := lru.New(space)
 	if err != nil {
 		return nil, err
 	}
+
 	return &CachingSpecProvider{
 		Cache:    cache,
 		Delegate: delegate,
