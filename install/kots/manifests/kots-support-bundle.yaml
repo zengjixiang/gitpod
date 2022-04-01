@@ -9,6 +9,12 @@ spec:
   collectors:
     - clusterInfo: {}
     - clusterResources: {}
+    - copyFromHost:
+        collectorName: os-release
+        image: busybox:1
+        name: os-release
+        hostPath: /usr/lib/os-release
+        extractArchive: true
     - logs:
         selector:
           - app=gitpod

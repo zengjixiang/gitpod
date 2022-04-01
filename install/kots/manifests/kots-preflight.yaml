@@ -6,7 +6,38 @@ kind: Preflight
 metadata:
   name: gitpod
 spec:
+  collectors:
+    - copyFromHost:
+        collectorName: os-release
+        image: busybox:1
+        name: os-release
+        hostPath: /etc/os-release
+        extractArchive: true
   analyzers:
+    - textAnalyze:
+        checkName: "Host operating system distribution"
+        fileName: os-release
+        regexGroups: 'NAME="(?P<Name>\w+)"'
+        outcomes:
+          - pass:
+              when: "Name == Ubuntu"
+              message: Host operating system detected as Ubuntu
+            fail:
+              message: Host operating system not detected as Ubuntu
+    - textAnalyze:
+        checkName: "Host operating system version"
+        fileName: os-release
+        regexGroups: 'VERSION_ID="(?P<Version>.*)"'
+        outcomes:
+          - fail:
+              when: "Version < 18.04"
+              message: Host operating system must be at least Ubuntu 18.04
+          - pass:
+              when: "Version == 18.04"
+          - pass:
+              when: "Version == 20.04"
+            warn:
+              message: Unknown Ubuntu version
     - clusterVersion:
         outcomes:
           - fail:
