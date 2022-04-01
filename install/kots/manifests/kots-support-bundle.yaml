@@ -9,12 +9,12 @@ spec:
   collectors:
     - clusterInfo: {}
     - clusterResources: {}
-    - copyFromHost:
-        collectorName: os-release
+    - run:
+        collectorName: "get-kernel"
         image: busybox:1
-        name: os-release
-        hostPath: /usr/lib/os-release
-        extractArchive: true
+        name: kernel.txt
+        command: ["uname"]
+        args: ["-r"]
     - logs:
         selector:
           - app=gitpod
