@@ -22,6 +22,8 @@ export class Werft {
     private sliceSpans: { [slice: string]: Span } = {}
     public currentPhaseSpan: Span;
     private globalSpanAttributes: SpanAttributes = {}
+    private slices: Set<string>
+    private closedSlices: Set<string>
 
     constructor(job: string) {
         if (werft) {
@@ -29,16 +31,19 @@ export class Werft {
         }
         this.tracer = trace.getTracer("default");
         this.rootSpan = this.tracer.startSpan(`job: ${job}`, { root: true, attributes: { 'werft.job.name': job } });
+        this.slices = new Set<string>()
+        this.closedSlices = new Set<string>()
 
         // Expose this instance as part of getGlobalWerftInstance
         werft = this;
     }
 
-    public phase(name, desc?: string) {
+    public phase(name: string, desc?: string) {
         // When you start a new phase the previous phase is implicitly closed.
         if (this.currentPhaseSpan) {
             this.endPhase()
         }
+        this.slices.add(name)
 
         const rootSpanCtx = trace.setSpan(context.active(), this.rootSpan);
         this.currentPhaseSpan = this.tracer.startSpan(`phase: ${name}`, {
@@ -53,6 +58,8 @@ export class Werft {
     }
 
     public log(slice, msg) {
+        this.slices.add(slice)
+
         if (!this.sliceSpans[slice]) {
             const parentSpanCtx = trace.setSpan(context.active(), this.currentPhaseSpan);
             const sliceSpan = this.tracer.startSpan(`slice: ${slice}`, undefined, parentSpanCtx)
@@ -86,6 +93,8 @@ export class Werft {
     }
 
     public done(slice: string) {
+        this.closedSlices.add(slice)
+
         const span = this.sliceSpans[slice]
         if (span) {
             span.end()
@@ -99,7 +108,7 @@ export class Werft {
     }
 
     private endPhase() {
-        // End all open slices
+        // End all open slices' span
         Object.entries(this.sliceSpans).forEach((kv) => {
             const [id, span] = kv
             span.end()
@@ -110,13 +119,28 @@ export class Werft {
     }
 
     public endAllSpans() {
+        this.logTraceResult()
+        this.endPhase()
+        this.rootSpan.end()
+    }
+
+    private logTraceResult() {
         const traceID = this.rootSpan.spanContext().traceId
-        const nowUnix =  Math.round(new Date().getTime() / 1000);
+        const nowUnix = Math.round(new Date().getTime() / 1000);
         // At the moment we're just looking for traces in a 30 minutes timerange with the specific traceID
         // A smarter approach would be to get a start timestamp from tracing.Initialize()
         exec(`werft log result -d "Honeycomb trace" -c github-check-honeycomb-trace url "https://ui.honeycomb.io/gitpod/datasets/werft/trace?trace_id=${traceID}&trace_start_ts=${nowUnix - 1800}&trace_end_ts=${nowUnix + 5}"`);
-        this.endPhase()
-        this.rootSpan.end()
+    }
+
+    public logUnclosedSlices() {
+        let unclosedSlices = this.slices
+        this.closedSlices.forEach(slice => {
+            unclosedSlices.delete(slice)
+        })
+
+        unclosedSlices.forEach(slice => {
+            console.log(`[WARNINGS] Slice '${slice}' wasn't closed properly, the Honeycomb trace might not be realistic.`);
+        })
     }
 
     /**
@@ -135,6 +159,6 @@ export class Werft {
             span.setAttributes(attributes)
         })
 
-        this.globalSpanAttributes = {...this.globalSpanAttributes, ...attributes}
+        this.globalSpanAttributes = { ...this.globalSpanAttributes, ...attributes }
     }
 }

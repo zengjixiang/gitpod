@@ -42,9 +42,13 @@ Tracing.initialize()
     .finally(() => {
         werft.phase("Stop kubectl port forwards", "Stopping kubectl port forwards")
         VM.stopKubectlPortForwards()
+        werft.done("Stop kubectl port forwards")
 
         werft.phase("Flushing telemetry", "Flushing telemetry before stopping job")
         werft.endAllSpans()
+        werft.done("Flushing telemetry")
+
+        werft.logUnclosedSlices()
     })
 
 async function run(context: any) {
