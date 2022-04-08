@@ -3,7 +3,7 @@
  * Licensed under the GNU Affero General Public License (AGPL).
  * See License-AGPL.txt in the project root for license information.
  */
-const { whenDev } = require("@craco/craco");
+const { when } = require("@craco/craco");
 
 module.exports = {
     style: {
@@ -11,7 +11,7 @@ module.exports = {
             plugins: [require("tailwindcss"), require("autoprefixer")],
         },
     },
-    ...whenDev(() => ({
+    ...when(process.env.GP_DEV_HOST && process.env.GP_DEV_COOKIE, () => ({
         devServer: {
             proxy: {
                 "/api": {
