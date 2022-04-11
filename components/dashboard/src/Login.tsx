@@ -4,6 +4,7 @@
  * See License-AGPL.txt in the project root for license information.
  */
 
+// @ts-nocheck
 import { AuthProviderInfo } from "@gitpod/gitpod-protocol";
 import * as GitpodCookie from "@gitpod/gitpod-protocol/lib/util/gitpod-cookie";
 import { CookieBanner } from "@palmabit/react-cookie-law";
