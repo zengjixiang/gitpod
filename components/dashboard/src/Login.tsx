@@ -241,12 +241,16 @@ export function Login() {
                         </div>
                     </div>
                     <CookieBanner
-                        message="Cookie banner message"
+                        message="The website uses cookies to enhance the user experience."
                         wholeDomain={true}
                         onAccept={() => {}}
                         onAcceptPreferences={() => {}}
                         onAcceptStatistics={() => {}}
                         onAcceptMarketing={() => {}}
+                        policyLink="https://www.gitpod.io/privacy"
+                        necessaryOptionText="These are cookies that are required for the operation of our Site and under our terms with you. They include, for example, cookies that enable you to log into secure areas of our Site or (on other sites) use a shopping cart or make use of e-billing services."
+                        statisticsOptionText="These allow us to recognise and count the number of visitors and to see how visitors move around our site when they are using it. This helps us improve the way our Website works, for example, by ensuring that users are finding what they are looking for easily."
+                        marketingOptionText="These cookies record your visit to our Website, the pages you have visited and the links you have followed. We will use this information subject to your choices and preferences to make our Website and the advertising displayed on it more relevant to your interests. We may also share this information with third parties for this purpose."
                     />
                 </div>
             </div>
