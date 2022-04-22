@@ -14,8 +14,8 @@ repos:
     cloneTarget: main
     workspaceImage: eu.gcr.io/gitpod-dev/workspace-images:e764b1a602dc4123d9a027358367b5c4a35b62043e3c630731702144b7d37f77
   - cloneURL: https://github.com/gitpod-io/template-python-flask
-    cloneTarget: main
-    workspaceImage: eu.gcr.io/gitpod-dev/workspace-images:32b2dc5f2707904a9338a97c77a039706df661b5c5e4a5851f1ee74f06a38fd3
+    cloneTarget: kylos101/loadgen
+    workspaceImage: eu.gcr.io/gitpod-dev/workspace-images:e7ddecbd76e8f352e25295b44dd628d157164aa29eba40619229bf0097d43e20
   - cloneURL: https://github.com/gitpod-io/spring-petclinic
     cloneTarget: master
     workspaceImage: eu.gcr.io/gitpod-dev/workspace-images:778ae830c07464e1ef160ef30ecc8e7e78f8f9e86719775be491785473690d2a
