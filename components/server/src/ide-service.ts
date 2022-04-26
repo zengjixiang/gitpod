@@ -4,8 +4,14 @@
  * See License-AGPL.txt in the project root for license information.
  */
 
-import { JetBrainsConfig, TaskConfig, Workspace } from "@gitpod/gitpod-protocol";
+import { IDESettings, JetBrainsConfig, TaskConfig, Workspace } from "@gitpod/gitpod-protocol";
+import { IDEOption, IDEOptions } from "@gitpod/gitpod-protocol/lib/ide-protocol";
 import { injectable } from "inversify";
+
+export interface IDEImageInfo {
+    image: string;
+    latest: boolean;
+}
 
 @injectable()
 export class IDEService {
@@ -83,5 +89,67 @@ rm -rf /tmp/backend-latest
             }
         }
         return tasks;
+    }
+
+    migrationIDESettings(ideSettings?: IDESettings) {
+        if (!ideSettings || ideSettings.settingVersion === "2.0") {
+            return;
+        }
+        const newIDESettings: IDESettings = {
+            settingVersion: "2.0",
+        };
+        if (ideSettings.useDesktopIde) {
+            if (ideSettings.defaultDesktopIde === "code-desktop") {
+                newIDESettings.defaultIde = "code-desktop";
+            } else if (ideSettings.defaultDesktopIde === "code-desktop-insiders") {
+                newIDESettings.defaultIde = "code-desktop";
+                newIDESettings.useLatestVersion = true;
+            } else {
+                newIDESettings.defaultIde = ideSettings.defaultDesktopIde;
+                newIDESettings.useLatestVersion = ideSettings.useLatestVersion;
+            }
+        } else {
+            const useLatest = ideSettings.defaultIde === "code-latest";
+            newIDESettings.defaultIde = "code";
+            newIDESettings.useLatestVersion = useLatest;
+        }
+        return newIDESettings;
+    }
+
+    chooseIDE(ideChoice: string, ideOptions: IDEOptions, useLatest: boolean, hasIdeSettingPerm: boolean) {
+        const chooseLatest = (useLatest: boolean, chooseOption?: IDEOption): IDEImageInfo | undefined => {
+            if (!chooseOption) {
+                return;
+            }
+            if (!useLatest) {
+                return { image: chooseOption.image, latest: false };
+            }
+            if (chooseOption.latestImage) {
+                return { image: chooseOption.latestImage, latest: true };
+            }
+            return { image: chooseOption.image, latest: false };
+        };
+        const defaultIDEOption = ideOptions.options[ideOptions.defaultIde];
+        const defaultInfo = chooseLatest(useLatest, defaultIDEOption)!;
+        const data: { ide: IDEImageInfo; desktopIde?: IDEImageInfo } = {
+            ide: defaultInfo,
+        };
+        const chooseOption = ideOptions.options[ideChoice] ?? defaultIDEOption;
+        const isDesktopIde = chooseOption.type === "desktop";
+        if (isDesktopIde) {
+            data.desktopIde = chooseLatest(useLatest, chooseOption);
+            if (hasIdeSettingPerm && !data.desktopIde?.image) {
+                data.desktopIde = { image: ideChoice, latest: true };
+            }
+        } else {
+            data.ide = chooseLatest(useLatest, chooseOption)!;
+            if (hasIdeSettingPerm && !data.ide.image) {
+                data.ide = { image: ideChoice, latest: true };
+            }
+        }
+        if (!data.ide.image) {
+            data.ide = defaultInfo;
+        }
+        return data;
     }
 }

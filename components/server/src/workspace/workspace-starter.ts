@@ -120,65 +120,6 @@ export interface StartWorkspaceOptions {
 const MAX_INSTANCE_START_RETRIES = 2;
 const INSTANCE_START_RETRY_INTERVAL_SECONDS = 2;
 
-// TODO(ak) move to IDE service
-export const migrationIDESettings = (user: User) => {
-    if (!user?.additionalData?.ideSettings || user.additionalData.ideSettings.settingVersion === "2.0") {
-        return;
-    }
-    const newIDESettings: IDESettings = {
-        settingVersion: "2.0",
-    };
-    const ideSettings = user.additionalData.ideSettings;
-    if (ideSettings.useDesktopIde) {
-        if (ideSettings.defaultDesktopIde === "code-desktop") {
-            newIDESettings.defaultIde = "code-desktop";
-        } else if (ideSettings.defaultDesktopIde === "code-desktop-insiders") {
-            newIDESettings.defaultIde = "code-desktop";
-            newIDESettings.useLatestVersion = true;
-        } else {
-            newIDESettings.defaultIde = ideSettings.defaultDesktopIde;
-            newIDESettings.useLatestVersion = ideSettings.useLatestVersion;
-        }
-    } else {
-        const useLatest = ideSettings.defaultIde === "code-latest";
-        newIDESettings.defaultIde = "code";
-        newIDESettings.useLatestVersion = useLatest;
-    }
-    return newIDESettings;
-};
-
-// TODO(ak) move to IDE service
-export const chooseIDE = (
-    ideChoice: string,
-    ideOptions: IDEOptions,
-    useLatest: boolean,
-    hasIdeSettingPerm: boolean,
-) => {
-    const defaultIDEOption = ideOptions.options[ideOptions.defaultIde];
-    const defaultIdeImage = useLatest ? defaultIDEOption.latestImage ?? defaultIDEOption.image : defaultIDEOption.image;
-    const data: { desktopIdeImage?: string; ideImage: string } = {
-        ideImage: defaultIdeImage,
-    };
-    const chooseOption = ideOptions.options[ideChoice];
-    const isDesktopIde = chooseOption.type === "desktop";
-    if (isDesktopIde) {
-        data.desktopIdeImage = useLatest ? chooseOption?.latestImage ?? chooseOption?.image : chooseOption?.image;
-        if (hasIdeSettingPerm) {
-            data.desktopIdeImage = data.desktopIdeImage || ideChoice;
-        }
-    } else {
-        data.ideImage = useLatest ? chooseOption?.latestImage ?? chooseOption?.image : chooseOption?.image;
-        if (hasIdeSettingPerm) {
-            data.ideImage = data.ideImage || ideChoice;
-        }
-    }
-    if (!data.ideImage) {
-        data.ideImage = defaultIdeImage;
-        // throw new Error("cannot choose correct browser ide");
-    }
-    return data;
-};
-
 @injectable()
 export class WorkspaceStarter {
     @inject(WorkspaceManagerClientProvider) protected readonly clientProvider: WorkspaceManagerClientProvider;
@@ -607,7 +548,7 @@ export class WorkspaceStarter {
         delete ideConfig.ideOptions.options["code-latest"];
         delete ideConfig.ideOptions.options["code-desktop-insiders"];
 
-        const migratted = migrationIDESettings(user);
+        const migratted = this.ideService.migrationIDESettings(user.additionalData?.ideSettings);
         if (user.additionalData?.ideSettings && migratted) {
             user.additionalData.ideSettings = migratted;
         }
@@ -628,14 +569,15 @@ export class WorkspaceStarter {
         };
 
         if (!!ideChoice) {
-            const choose = chooseIDE(
+            const choose = this.ideService.chooseIDE(
                 ideChoice,
                 ideConfig.ideOptions,
                 useLatest,
                 this.authService.hasPermission(user, "ide-settings"),
             );
-            configuration.ideImage = choose.ideImage;
-            configuration.desktopIdeImage = choose.desktopIdeImage;
+            configuration.ideImage = choose.ide.image;
+            configuration.desktopIdeImage = choose.desktopIde?.image;
+            configuration.ideConfig!.useLatest = choose.ide.latest || choose.desktopIde?.latest;
         }
 
         const referrerIde = this.resolveReferrerIDE(workspace, user, ideConfig);
