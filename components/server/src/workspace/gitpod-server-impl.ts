@@ -872,6 +872,8 @@ export class GitpodServerImpl implements GitpodServerWithTracing, Disposable {
             const client = await this.workspaceManagerClientProvider.get(wsi.region);
             await client.markActive(ctx, req);
 
+            console.log(`>> HEARTBEAT instanceId ${instanceId}`);
+
             if (options && options.roundTripTime && Number.isFinite(options.roundTripTime)) {
                 this.clientDataPrometheusAdapter.storeWorkspaceRoundTripTimeSample(
                     user,
