@@ -45,7 +45,7 @@ import { TypeORM } from "./typeorm";
 import { log } from "@gitpod/gitpod-protocol/lib/util/logging";
 
 // OAuth token expiry
-const tokenExpiryInFuture = new DateInterval("7d");
+const tokenExpiryInFuture = new DateInterval("4m");
 
 /** HACK ahead: Some entities - namely DBTokenEntry for now - need access to an EncryptionService so we publish it here */
 export let encryptionService: EncryptionService;
