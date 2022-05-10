@@ -23,6 +23,7 @@ import (
 	"github.com/gitpod-io/gitpod/ws-daemon/pkg/iws"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -39,7 +40,10 @@ func configmap(ctx *common.RenderContext) ([]runtime.Object, error) {
 	}
 
 	cpuLimitConfig := cpulimit.Config{
-		Enabled:        false,
+		Enabled:        true,
+		BurstLimit:     resource.MustParse("4"),
+		Limit:          resource.MustParse("2"),
+		TotalBandwidth: resource.MustParse("6"),
 		CGroupBasePath: "/mnt/node-cgroups",
 		ControlPeriod:  util.Duration(15 * time.Second),
 	}
@@ -49,10 +53,10 @@ func configmap(ctx *common.RenderContext) ([]runtime.Object, error) {
 			return nil
 		}
 
-		cpuLimitConfig.Enabled = ucfg.Workspace.CPULimits.Enabled
-		cpuLimitConfig.BurstLimit = ucfg.Workspace.CPULimits.BurstLimit
-		cpuLimitConfig.Limit = ucfg.Workspace.CPULimits.Limit
-		cpuLimitConfig.TotalBandwidth = ucfg.Workspace.CPULimits.NodeCPUBandwidth
+		cpuLimitConfig.Enabled = true
+		cpuLimitConfig.BurstLimit = resource.MustParse("4")
+		cpuLimitConfig.Limit = resource.MustParse("2")
+		cpuLimitConfig.TotalBandwidth = resource.MustParse("6")
 
 		ioLimitConfig.WriteBWPerSecond = ucfg.Workspace.IOLimits.WriteBWPerSecond
 		ioLimitConfig.ReadBWPerSecond = ucfg.Workspace.IOLimits.ReadBWPerSecond
