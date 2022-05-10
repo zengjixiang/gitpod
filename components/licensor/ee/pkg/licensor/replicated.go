@@ -133,7 +133,8 @@ func newReplicatedEvaluator(client *http.Client, domain string) (res *Evaluator)
 		return defaultReplicatedLicense()
 	}
 
-	if replicatedPayload.ExpirationTime != nil {
+	// check expirationTime is nil or set to zero time(zero value of time.Time is 01-01-01)
+	if replicatedPayload.ExpirationTime != nil && !replicatedPayload.ExpirationTime.IsZero() {
 		lic.ValidUntil = *replicatedPayload.ExpirationTime
 
 		if lic.ValidUntil.Before(time.Now()) {
