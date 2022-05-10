@@ -50,9 +50,9 @@ export class UserServiceEE extends UserService {
     public workspaceTimeoutToDuration(timeout: WorkspaceTimeoutDuration): string {
         switch (timeout) {
             case WORKSPACE_TIMEOUT_DEFAULT_SHORT:
-                return "1m";
+                return "10m";
             case WORKSPACE_TIMEOUT_DEFAULT_LONG:
-                return this.config.workspaceDefaults.timeoutDefault || "1m";
+                return this.config.workspaceDefaults.timeoutDefault || "5m";
             case WORKSPACE_TIMEOUT_EXTENDED:
             case WORKSPACE_TIMEOUT_EXTENDED_ALT:
                 return this.config.workspaceDefaults.timeoutExtended || "180m";
@@ -63,7 +63,7 @@ export class UserServiceEE extends UserService {
         switch (duration) {
             case "10m":
                 return WORKSPACE_TIMEOUT_DEFAULT_SHORT;
-            case this.config.workspaceDefaults.timeoutDefault || "1m":
+            case this.config.workspaceDefaults.timeoutDefault || "5m":
                 return WORKSPACE_TIMEOUT_DEFAULT_LONG;
             case this.config.workspaceDefaults.timeoutExtended || "180m":
                 return WORKSPACE_TIMEOUT_EXTENDED_ALT;
