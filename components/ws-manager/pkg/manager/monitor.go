@@ -376,9 +376,14 @@ func actOnPodEvent(ctx context.Context, m actingManager, status *api.WorkspaceSt
 			}
 		}
 
-		_, gone := wso.Pod.Annotations[wsk8s.ContainerIsGoneAnnotation]
 		_, alreadyFinalized := wso.Pod.Annotations[startedDisposalAnnotation]
+		if isFailed, ok := pod.Annotations[workspaceFailedBeforeStoppingAnnotation]; ok && isFailed == "true" && !alreadyFinalized {
+			if neverReady, ok := pod.Annotations[workspaceNeverReadyAnnotation]; ok && neverReady == "true" {
+				return m.modifyFinalizer(ctx, workspaceID, gitpodFinalizerName, false)
+			}
+		}
 
+		_, gone := wso.Pod.Annotations[wsk8s.ContainerIsGoneAnnotation]
 		if (terminated || gone) && !alreadyFinalized {
 			// We start finalizing the workspace content only after the container is gone. This way we ensure there's
 			// no process modifying the workspace content as we create the backup.
@@ -389,6 +394,14 @@ func actOnPodEvent(ctx context.Context, m actingManager, status *api.WorkspaceSt
 	if status.Phase == api.WorkspacePhase_STOPPED {
 		// we've disposed already - try to remove the finalizer and call it a day
 		return m.modifyFinalizer(ctx, workspaceID, gitpodFinalizerName, false)
+	}
+
+	if status.Phase == api.WorkspacePhase_PENDING {
+		if isFailed, ok := pod.Annotations[workspaceFailedBeforeStoppingAnnotation]; ok && isFailed == "true" {
+			if neverReady, ok := pod.Annotations[workspaceNeverReadyAnnotation]; ok && neverReady == "true" {
+				return m.modifyFinalizer(ctx, workspaceID, gitpodFinalizerName, false)
+			}
+		}
 	}
 
 	return nil
