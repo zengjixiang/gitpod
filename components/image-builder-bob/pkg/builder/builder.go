@@ -135,7 +135,7 @@ func buildImage(ctx context.Context, contextDir, dockerfile, authLayer, target s
 	}
 
 	buildctlArgs := []string{
-		// "--debug",
+		"--debug",
 		"build",
 		"--progress=plain",
 		"--output=type=image,name=" + target + ",push=true,oci-mediatypes=true,compression=estargz,force-compression=true",
