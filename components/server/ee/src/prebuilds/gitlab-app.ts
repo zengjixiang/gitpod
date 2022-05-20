@@ -33,28 +33,36 @@ export class GitLabApp {
     @postConstruct()
     protected init() {
         this._router.post("/", async (req, res) => {
-            const event = req.header("X-Gitlab-Event");
-            if (event === "Push Hook") {
-                const context = req.body as GitLabPushHook;
-                const span = TraceContext.startSpan("GitLapApp.handleEvent", {});
-                span.setTag("request", context);
-                log.debug("GitLab push hook received", { event, context });
-                let user: User | undefined;
-                try {
-                    user = await this.findUser({ span }, context, req);
-                } catch (error) {
-                    log.error("Cannot find user.", error, {});
+            try {
+                const event = req.header("X-Gitlab-Event");
+                if (event === "Push Hook") {
+                    const context = req.body as GitLabPushHook;
+                    const span = TraceContext.startSpan("GitLapApp.handleEvent", {});
+                    span.setTag("request", context);
+                    log.debug("GitLab push hook received", { event, context });
+                    let user: User | undefined;
+                    try {
+                        user = await this.findUser({ span }, context, req);
+                    } catch (error) {
+                        log.error("Cannot find user.", error, {});
+                    }
+                    if (!user) {
+                        // If the webhook installer is no longer found in Gitpod's DB
+                        // we should send a UNAUTHORIZED signal.
+                        res.statusCode = 401;
+                        res.send();
+                        return;
+                    }
+                    await this.handlePushHook({ span }, context, user);
+                } else {
+                    log.warn("Unknown GitLab event received", { event });
                 }
-                if (!user) {
-                    res.statusCode = 503;
-                    res.send();
-                    return;
-                }
-                await this.handlePushHook({ span }, context, user);
-            } else {
-                log.debug("Unknown GitLab event received", { event });
+            } catch (err) {
+                console.error(`Couldn't handle request.`, err, { headers: req.headers });
+            } finally {
+                // we always respond with OK, when we received a valid event.
+                res.send("OK");
             }
-            res.send("OK");
         });
     }
 
