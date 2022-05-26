@@ -7,7 +7,7 @@ defaultArgs:
   jbMarketplacePublishTrigger: "false"
   publishToJBMarketplace: true
   localAppVersion: unknown
-  codeCommit: 9501728f63e11002972752ad59bd543ba22a2e87
+  codeCommit: d66c73af75043dae5f76fd8655ecca195391ebe1
   codeQuality: stable
   jetbrainsBackendQualifier: stable
   intellijDownloadUrl: "https://download.jetbrains.com/idea/ideaIU-2022.1.1.tar.gz"
@@ -24,7 +24,12 @@ defaultVariant:
       - "**/node_modules/**"
   config:
     go:
-      lintCommand: ["sh", "-c", "golangci-lint run --disable govet,errcheck,typecheck,staticcheck --allow-parallel-runners --timeout 5m"]
+      lintCommand:
+        [
+          "sh",
+          "-c",
+          "golangci-lint run --disable govet,errcheck,typecheck,staticcheck --allow-parallel-runners --timeout 5m",
+        ]
 variants:
   - name: oss
     srcs:
