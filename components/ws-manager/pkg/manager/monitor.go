@@ -1179,6 +1179,13 @@ func (m *Monitor) finalizeWorkspaceContent(ctx context.Context, wso *workspaceOb
 		GitStatus:      gitStatus,
 	}
 	if backupError != nil {
+		c, err := m.manager.metrics.totalBackupFailureCounterVec.GetMetricWithLabelValues(wsType, wso.Pod.Labels[workspaceClassLabel])
+		if err != nil {
+			log.WithError(err).WithField("type", wsType).Warn("cannot get counter for workspace backup failure metric")
+		} else {
+			c.Inc()
+		}
+
 		if dataloss {
 			disposalStatus.BackupFailure = backupError.Error()
 		} else {
@@ -1186,6 +1193,13 @@ func (m *Monitor) finalizeWorkspaceContent(ctx context.Context, wso *workspaceOb
 			// state management or cleanup. No need to worry the user.
 			log.WithError(backupError).WithFields(wso.GetOWI()).Warn("internal error while disposing workspace content")
 			tracing.LogError(span, backupError)
+		}
+	} else {
+		c, err := m.manager.metrics.totalBackupSuccessCounterVec.GetMetricWithLabelValues(wsType, wso.Pod.Labels[workspaceClassLabel])
+		if err != nil {
+			log.WithError(err).WithField("type", wsType).Warn("cannot get counter for workspace backup success counter")
+		} else {
+			c.Inc()
 		}
 	}
 }

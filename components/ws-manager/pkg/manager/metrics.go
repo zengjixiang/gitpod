@@ -41,9 +41,13 @@ type metrics struct {
 	initializeTimeHistVec     *prometheus.HistogramVec
 	finalizeTimeHistVec       *prometheus.HistogramVec
 	volumeSnapshotTimeHistVec *prometheus.HistogramVec
-	totalStartsCounterVec     *prometheus.CounterVec
-	totalStopsCounterVec      *prometheus.CounterVec
-	totalOpenPortGauge        prometheus.GaugeFunc
+
+	totalStartsCounterVec        *prometheus.CounterVec
+	totalStopsCounterVec         *prometheus.CounterVec
+	totalBackupSuccessCounterVec *prometheus.CounterVec
+	totalBackupFailureCounterVec *prometheus.CounterVec
+
+	totalOpenPortGauge prometheus.GaugeFunc
 
 	mu         sync.Mutex
 	phaseState map[string]api.WorkspacePhase
@@ -94,6 +98,18 @@ func newMetrics(m *Manager) *metrics {
 			Name:      "workspace_stops_total",
 			Help:      "total number of workspaces stopped",
 		}, []string{"reason", "type", "class"}),
+		totalBackupSuccessCounterVec: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: metricsNamespace,
+			Subsystem: metricsWorkspaceSubsystem,
+			Name:      "workspace_backups_success_total",
+			Help:      "total number of workspace backups success",
+		}, []string{"type", "class"}),
+		totalBackupFailureCounterVec: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: metricsNamespace,
+			Subsystem: metricsWorkspaceSubsystem,
+			Name:      "workspace_backups_failure_total",
+			Help:      "total number of workspace backups failure",
+		}, []string{"type", "class"}),
 		totalOpenPortGauge: prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 			Namespace: metricsNamespace,
 			Subsystem: metricsWorkspaceSubsystem,
@@ -151,6 +167,8 @@ func (m *metrics) Register(reg prometheus.Registerer) error {
 		newSubscriberQueueLevelVec(m.manager),
 		m.totalStartsCounterVec,
 		m.totalStopsCounterVec,
+		m.totalBackupSuccessCounterVec,
+		m.totalBackupFailureCounterVec,
 		m.totalOpenPortGauge,
 	}
 	for _, c := range collectors {
