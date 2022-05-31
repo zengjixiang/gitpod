@@ -1,10 +1,14 @@
+// Copyright (c) 2022 Gitpod GmbH. All rights reserved.
+// Licensed under the GNU Affero General Public License (AGPL).
+// See License-AGPL.txt in the project root for license information.
+
 package db
 
 import (
 	"time"
 )
 
-type DBTeam struct {
+type Team struct {
 	ID            string    `gorm:"primary_key;column:id;type:char;size:36;" json:"id"`
 	Name          string    `gorm:"column:name;type:varchar;size:255;" json:"name"`
 	Slug          string    `gorm:"column:slug;type:varchar;size:255;" json:"slug"`
@@ -15,6 +19,6 @@ type DBTeam struct {
 }
 
 // TableName sets the insert table name for this struct type
-func (d *DBTeam) TableName() string {
+func (d *Team) TableName() string {
 	return "d_b_team"
 }
