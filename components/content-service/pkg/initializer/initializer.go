@@ -185,10 +185,16 @@ type fromBackupInitializer struct {
 }
 
 func (bi *fromBackupInitializer) Run(ctx context.Context, mappings []archive.IDMapping) (src csapi.WorkspaceInitSource, err error) {
+	t := time.Now()
+	defer func() {
+		fmt.Printf("fromBackupInitializer duration: %v", time.Since(t).Seconds())
+	}()
+
 	if bi.FromVolumeSnapshot {
 		return csapi.WorkspaceInitFromBackup, nil
 	}
 
+	fmt.Println("[fromBackupInitializer] download")
 	hasBackup, err := bi.RemoteStorage.Download(ctx, bi.Location, storage.DefaultBackup, mappings)
 	if !hasBackup {
 		return src, xerrors.Errorf("no backup found")
@@ -196,6 +202,7 @@ func (bi *fromBackupInitializer) Run(ctx context.Context, mappings []archive.IDM
 	if err != nil {
 		return src, xerrors.Errorf("cannot restore backup: %w", err)
 	}
+	fmt.Printf("[fromBackupInitializer] has backup %t\n", hasBackup)
 
 	return csapi.WorkspaceInitFromBackup, nil
 }
@@ -368,6 +375,9 @@ func WithChown(uid, gid int) InitializeOpt {
 
 // InitializeWorkspace initializes a workspace from backup or an initializer
 func InitializeWorkspace(ctx context.Context, location string, remoteStorage storage.DirectDownloader, opts ...InitializeOpt) (src csapi.WorkspaceInitSource, err error) {
+	log.Info("[InitializeWorkspace]")
+	fmt.Println("[InitializeWorkspace]")
+
 	//nolint:ineffassign
 	span, ctx := opentracing.StartSpanFromContext(ctx, "InitializeWorkspace")
 	span.SetTag("location", location)
@@ -419,10 +429,12 @@ func InitializeWorkspace(ctx context.Context, location string, remoteStorage sto
 	}
 
 	// Run the initializer
+	fmt.Println("[InitializeWorkspace] download")
 	hasBackup, err := remoteStorage.Download(ctx, location, storage.DefaultBackup, cfg.mappings)
 	if err != nil {
 		return src, xerrors.Errorf("cannot restore backup: %w", err)
 	}
+	fmt.Printf("[InitializeWorkspace] has backup %t\n", hasBackup)
 
 	span.SetTag("hasBackup", hasBackup)
 	if hasBackup {

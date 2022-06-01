@@ -7,10 +7,12 @@ package executor
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"github.com/gitpod-io/gitpod/common-go/log"
 	csapi "github.com/gitpod-io/gitpod/content-service/api"
 	"github.com/gitpod-io/gitpod/content-service/pkg/initializer"
 	"github.com/gitpod-io/gitpod/content-service/pkg/storage"
@@ -45,6 +47,9 @@ func Prepare(req *csapi.WorkspaceInitializer, urls map[string]string) ([]byte, e
 // Execute runs an initializer to place content in destination based on the configuration read
 // from the cfgin stream.
 func Execute(ctx context.Context, destination string, cfgin io.Reader, forceGitUser bool, opts ...initializer.InitializeOpt) (src csapi.WorkspaceInitSource, err error) {
+	log.Info("[Execute]")
+	fmt.Println("[Execute]")
+
 	var cfg config
 	err = json.NewDecoder(cfgin).Decode(&cfg)
 	if err != nil {
@@ -56,6 +61,7 @@ func Execute(ctx context.Context, destination string, cfgin io.Reader, forceGitU
 		ilr initializer.Initializer
 	)
 	if cfg.FromBackup == "" {
+		fmt.Println("[Execute] cfg.FromBackup == \"\"")
 		var req csapi.WorkspaceInitializer
 		err = protojson.Unmarshal(cfg.Req, &req)
 		if err != nil {
@@ -70,6 +76,7 @@ func Execute(ctx context.Context, destination string, cfgin io.Reader, forceGitU
 			return "", err
 		}
 	} else {
+		fmt.Println("[Execute] cfg.FromBackup != \"\"")
 		rs = &storage.NamedURLDownloader{
 			URLs: map[string]string{
 				storage.DefaultBackup: cfg.FromBackup,
@@ -78,11 +85,15 @@ func Execute(ctx context.Context, destination string, cfgin io.Reader, forceGitU
 		ilr = &initializer.EmptyInitializer{}
 	}
 
+	log.Info("[Execute] InitializeWorkspace")
+	fmt.Println("[Execute] InitializeWorkspace")
 	src, err = initializer.InitializeWorkspace(ctx, destination, rs, append(opts, initializer.WithInitializer(ilr))...)
 	if err != nil {
 		return "", err
 	}
 
+	log.Info("[Execute] PlaceWorkspaceReadyFile")
+	fmt.Println("[Execute] PlaceWorkspaceReadyFile")
 	err = initializer.PlaceWorkspaceReadyFile(ctx, destination, src, initializer.GitpodUID, initializer.GitpodGID)
 	if err != nil {
 		return src, err
