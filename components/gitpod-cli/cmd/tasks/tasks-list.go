@@ -7,24 +7,23 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
-	"github.com/gitpod-io/gitpod/gitpod-cli/pkg/supervisor"
-	"github.com/gitpod-io/gitpod/supervisor/api"
-	"github.com/spf13/cobra"
-
+	supervisor_helper "github.com/gitpod-io/gitpod/gitpod-cli/pkg/supervisor-helper"
+	supervisor "github.com/gitpod-io/gitpod/supervisor/api"
 	"github.com/olekukonko/tablewriter"
+	"github.com/spf13/cobra"
 )
 
 func ListTasksCmd(cmd *cobra.Command, args []string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
-	conn := supervisor.Dial()
-	client := api.NewStatusServiceClient(conn)
-
-	tasks := supervisor.GetTasksList(ctx, client)
+	tasks, err := supervisor_helper.GetTasksList(ctx)
+	if err != nil {
+		log.Fatalf("cannot get task list: %s", err)
+	}
 
 	if len(tasks) == 0 {
 		fmt.Println("No tasks detected")
@@ -36,7 +35,7 @@ func ListTasksCmd(cmd *cobra.Command, args []string) {
 	table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
 	table.SetCenterSeparator("|")
 
-	mapStatusToColor := map[api.TaskState]int{
+	mapStatusToColor := map[supervisor.TaskState]int{
 		0: tablewriter.FgHiGreenColor,
 		1: tablewriter.FgHiGreenColor,
 		2: tablewriter.FgHiBlackColor,
