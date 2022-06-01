@@ -60,7 +60,14 @@ var ring0Cmd = &cobra.Command{
 	Short: "starts ring0 - enter here",
 	Run: func(_ *cobra.Command, args []string) {
 		log.Init(ServiceName, Version, true, false)
-		log := log.WithField("ring", 0)
+		wsid := os.Getenv("GITPOD_WORKSPACE_ID")
+		if wsid == "" {
+			log.Error("cannot find GITPOD_WORKSPACE_ID")
+			return
+		}
+
+		log := log.WithField("ring", 0).WithField("workspaceId", wsid)
+		log.Error("test")
 
 		common_grpc.SetupLogging()
 
