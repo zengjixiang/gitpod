@@ -5,16 +5,17 @@
 package db
 
 import (
+	"github.com/google/uuid"
 	"time"
 )
 
 type Team struct {
-	ID   string `gorm:"primary_key;column:id;type:char;size:36;" json:"id"`
-	Name string `gorm:"column:name;type:varchar;size:255;" json:"name"`
-	Slug string `gorm:"column:slug;type:varchar;size:255;" json:"slug"`
+	ID   uuid.UUID `gorm:"primary_key;column:id;type:char;size:36;" json:"id"`
+	Name string    `gorm:"column:name;type:varchar;size:255;" json:"name"`
+	Slug string    `gorm:"column:slug;type:varchar;size:255;" json:"slug"`
 
-	CreationTime VarcharTime `gorm:"column:creationTime;type:varchar;size:255;" json:"creation_time"`
-	LastModified time.Time   `gorm:"column:_lastModified;type:timestamp;default:CURRENT_TIMESTAMP(6);" json:"_last_modified"`
+	CreationTime VarcharTime `gorm:"column:creationTime;type:varchar;size:255;" json:"creationTime"`
+	LastModified time.Time   `gorm:"column:_lastModified;type:timestamp;default:CURRENT_TIMESTAMP(6);" json:"_lastModified"`
 
 	MarkedDeleted int32 `gorm:"column:markedDeleted;type:tinyint;default:0;" json:"marked_deleted"`
 
