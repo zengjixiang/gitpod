@@ -24,7 +24,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f
 	google.golang.org/grpc v1.52.3
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.33.0
 	k8s.io/api v0.24.4
 	k8s.io/apimachinery v0.24.4
 	k8s.io/client-go v0.24.4
