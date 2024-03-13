@@ -30,7 +30,7 @@ require (
 	github.com/zitadel/oidc v1.13.0
 	golang.org/x/oauth2 v0.5.0
 	google.golang.org/grpc v1.52.3
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.33.0
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gorm.io/gorm v1.24.1
 )
