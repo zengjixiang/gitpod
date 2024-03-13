@@ -32,7 +32,7 @@ require (
 	golang.org/x/tools v0.1.12 // indirect
 	google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6 // indirect
 	google.golang.org/grpc v1.52.3 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	honnef.co/go/tools v0.2.2 // indirect
 )
 
