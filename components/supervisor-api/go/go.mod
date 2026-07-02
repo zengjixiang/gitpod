@@ -1,8 +1,6 @@
 module github.com/gitpod-io/gitpod/supervisor/api
 
-go 1.24
-
-toolchain go1.24.3
+go 1.25.0
 
 godebug tlsmlkem=0
 
@@ -15,7 +13,7 @@ require (
 
 require (
 	github.com/golang/protobuf v1.5.2 // indirect
-	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
-	golang.org/x/sys v0.0.0-20220610221304-9f5ed59c137d // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 )
